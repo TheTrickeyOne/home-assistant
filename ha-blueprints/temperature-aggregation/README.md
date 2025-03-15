@@ -12,7 +12,7 @@ This blueprint creates a template sensor in Home Assistant that calculates eithe
 
 ## Installation
 
-[![Import Blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/yourusername/ha-blueprints/main/temperature_aggregation.yaml)
+[![Import Blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/TheTrickeyOne/home-assistant/ha-blueprints/temperature-aggregation/main/temperature_aggregation.yaml)
 
 1. Click the "Import Blueprint" button above
 2. Follow the import wizard in Home Assistant
