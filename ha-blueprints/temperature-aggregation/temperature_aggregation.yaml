@@ -2,7 +2,7 @@ blueprint:
   name: Temperature Aggregation Sensor
   description: Creates a template sensor that calculates average (mean) or median temperature from multiple sensors
   domain: template
-  source_url: https://github.com/TheTrickeyOne/home-assistant/ha-blueprints/blob/main/temperature_aggregation.yaml
+  source_url: https://github.com/TheTrickeyOne/home-assistant/blob/main/ha-blueprints/temperature-aggregation/temperature_aggregation.yaml
   input:
     name:
       name: Sensor Name
