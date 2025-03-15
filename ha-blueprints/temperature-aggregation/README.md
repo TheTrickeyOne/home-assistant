@@ -16,7 +16,7 @@ This blueprint creates a template sensor in Home Assistant that calculates eithe
 
 1. Click the "Import Blueprint" button above
 2. Follow the import wizard in Home Assistant
-3. Create a sensor by going to Settings → Blueprints → Temperature Aggregation Sensor → Create Automation
+3. Create a sensor by going to Settings → Blueprints → Temperature Aggregation Sensor → Create Template Sensor
 
 ## Configuration Options
 
