@@ -1,7 +1,7 @@
 blueprint:
   name: Temperature Aggregation Sensor
   description: Creates a template sensor that calculates average (mean) or median temperature from multiple sensors
-  domain: homeassistant
+  domain: automation
   source_url: https://github.com/TheTrickeyOne/home-assistant/blob/main/ha-blueprints/temperature-aggregation/temperature_aggregation.yaml
   input:
     name:
@@ -41,41 +41,67 @@ blueprint:
             - label: Fahrenheit
               value: °F
 
-# Template sensor configuration
-template:
-  - sensor:
-      - name: "{{ this.input.name }}"
-        unique_id: "temperature_aggregation_{{ this.input.name|lower|replace(' ', '_') }}"
-        state_class: measurement
-        device_class: temperature
-        unit_of_measurement: "{{ this.input.unit }}"
-        state: >
-          {% set sensor_list = this.input.sensors %}
-          {% set temp_values = [] %}
-          {% for sensor in sensor_list %}
-            {% set temp = states(sensor) | float(-999) %}
-            {% if temp != -999 %}
-              {% set temp_values = temp_values + [temp] %}
-            {% endif %}
-          {% endfor %}
-          
-          {% if temp_values | length > 0 %}
-            {% if this.input.calculation_type == 'average' %}
-              {{ (temp_values | sum / temp_values | length) | round(1) }}
-            {% else %}
-              {% set sorted = temp_values | sort %}
-              {% set middle = (temp_values | length - 1) / 2 %}
-              {% if middle == middle | int %}
-                {{ sorted[middle | int] | round(1) }}
-              {% else %}
-                {{ ((sorted[middle | int] + sorted[middle | int + 1]) / 2) | round(1) }}
-              {% endif %}
-            {% endif %}
-          {% else %}
-            unknown
-          {% endif %}
-        attributes:
-          calculation_type: "{{ this.input.calculation_type }}"
-          sensors_used: "{{ temp_values | length }}"
-          total_sensors: "{{ this.input.sensors | length }}"
-          source_sensors: "{{ this.input.sensors }}"
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: event
+    event_type: state_changed
+    event_data:
+      entity_id: !input sensors
+
+variables:
+  sensors: !input sensors
+  calculation_type: !input calculation_type
+  name: !input name
+  unit: !input unit
+
+action:
+  - service: homeassistant.update_entity
+    target:
+      entity_id: sensor.{{ name|lower|replace(' ', '_') }}
+  - service: persistent_notification.create
+    data:
+      title: "Temperature Aggregation Sensor Created"
+      message: >
+        The sensor "{{ name }}" has been created using the Temperature Aggregation Blueprint.
+        It calculates the {{ calculation_type }} of {{ sensors|length }} temperature sensors.
+        Please add the following to your configuration.yaml file if not already present:
+
+        template:
+          - sensor:
+              - name: "{{ name }}"
+                unique_id: "temperature_aggregation_{{ name|lower|replace(' ', '_') }}"
+                state_class: measurement
+                device_class: temperature
+                unit_of_measurement: "{{ unit }}"
+                state: >
+                  {% raw %}
+                  {% set sensor_list = {{ sensors|tojson }} %}
+                  {% set temp_values = [] %}
+                  {% for sensor in sensor_list %}
+                    {% set temp = states(sensor) | float(-999) %}
+                    {% if temp != -999 %}
+                      {% set temp_values = temp_values + [temp] %}
+                    {% endif %}
+                  {% endfor %}
+                  
+                  {% if temp_values | length > 0 %}
+                    {% if "{{ calculation_type }}" == 'average' %}
+                      {{ (temp_values | sum / temp_values | length) | round(1) }}
+                    {% else %}
+                      {% set sorted = temp_values | sort %}
+                      {% set middle = (temp_values | length - 1) / 2 %}
+                      {% if middle == middle | int %}
+                        {{ sorted[middle | int] | round(1) }}
+                      {% else %}
+                        {{ ((sorted[middle | int] + sorted[middle | int + 1]) / 2) | round(1) }}
+                      {% endif %}
+                    {% endif %}
+                  {% else %}
+                    unknown
+                  {% endif %}
+                  {% endraw %}
+                attributes:
+                  calculation_type: "{{ calculation_type }}"
+                  total_sensors: {{ sensors|length }}
+                  source_sensors: {{ sensors|tojson }}
