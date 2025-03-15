@@ -1,7 +1,7 @@
 blueprint:
   name: Temperature Aggregation Sensor
   description: Creates a template sensor that calculates average (mean) or median temperature from multiple sensors
-  domain: template
+  domain: homeassistant
   source_url: https://github.com/TheTrickeyOne/home-assistant/blob/main/ha-blueprints/temperature-aggregation/temperature_aggregation.yaml
   input:
     name:
@@ -41,39 +41,41 @@ blueprint:
             - label: Fahrenheit
               value: °F
 
-sensor:
-  - name: "{{ name }}"
-    unique_id: "temperature_aggregation_{{ name|lower|replace(' ', '_') }}"
-    state_class: measurement
-    device_class: temperature
-    unit_of_measurement: "{{ unit }}"
-    state: >
-      {% set sensor_list = sensors %}
-      {% set temp_values = [] %}
-      {% for sensor in sensor_list %}
-        {% set temp = states(sensor) | float(-999) %}
-        {% if temp != -999 %}
-          {% set temp_values = temp_values + [temp] %}
-        {% endif %}
-      {% endfor %}
-      
-      {% if temp_values | length > 0 %}
-        {% if calculation_type == 'average' %}
-          {{ (temp_values | sum / temp_values | length) | round(1) }}
-        {% else %}
-          {% set sorted = temp_values | sort %}
-          {% set middle = (temp_values | length - 1) / 2 %}
-          {% if middle == middle | int %}
-            {{ sorted[middle | int] | round(1) }}
+# Template sensor configuration
+template:
+  - sensor:
+      - name: "{{ this.input.name }}"
+        unique_id: "temperature_aggregation_{{ this.input.name|lower|replace(' ', '_') }}"
+        state_class: measurement
+        device_class: temperature
+        unit_of_measurement: "{{ this.input.unit }}"
+        state: >
+          {% set sensor_list = this.input.sensors %}
+          {% set temp_values = [] %}
+          {% for sensor in sensor_list %}
+            {% set temp = states(sensor) | float(-999) %}
+            {% if temp != -999 %}
+              {% set temp_values = temp_values + [temp] %}
+            {% endif %}
+          {% endfor %}
+          
+          {% if temp_values | length > 0 %}
+            {% if this.input.calculation_type == 'average' %}
+              {{ (temp_values | sum / temp_values | length) | round(1) }}
+            {% else %}
+              {% set sorted = temp_values | sort %}
+              {% set middle = (temp_values | length - 1) / 2 %}
+              {% if middle == middle | int %}
+                {{ sorted[middle | int] | round(1) }}
+              {% else %}
+                {{ ((sorted[middle | int] + sorted[middle | int + 1]) / 2) | round(1) }}
+              {% endif %}
+            {% endif %}
           {% else %}
-            {{ ((sorted[middle | int] + sorted[middle | int + 1]) / 2) | round(1) }}
+            unknown
           {% endif %}
-        {% endif %}
-      {% else %}
-        unknown
-      {% endif %}
-    attributes:
-      calculation_type: "{{ calculation_type }}"
-      sensors_used: "{{ temp_values | length }}"
-      total_sensors: "{{ sensors | length }}"
-      source_sensors: "{{ sensors }}"
+        attributes:
+          calculation_type: "{{ this.input.calculation_type }}"
+          sensors_used: "{{ temp_values | length }}"
+          total_sensors: "{{ this.input.sensors | length }}"
+          source_sensors: "{{ this.input.sensors }}"
